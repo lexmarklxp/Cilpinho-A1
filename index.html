@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplicação de Prova</title>
+    <title>Exame de Compreensão Auditiva</title>
     <style>
         * {
             margin: 0;
@@ -20,7 +20,7 @@
             justify-content: center;
             height: 100vh;
             overflow: hidden;
-            user-select: none; /* Impede a seleção de textos */
+            user-select: none; /* Impede selecionar texto */
         }
         .card {
             text-align: center;
@@ -35,13 +35,30 @@
             margin-bottom: 20px;
             font-size: 24px;
         }
-        video, audio {
+        .media-wrapper {
+            position: relative;
             width: 100%;
-            max-height: 400px;
+            margin-top: 20px;
             border-radius: 8px;
+            overflow: hidden;
+        }
+        /* Película invisível por cima do vídeo que bloqueia todos os cliques */
+        .overlay-blocker {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 999;
+            background: transparent;
+            cursor: default;
+        }
+        video {
+            width: 100%;
+            min-height: 250px;
+            max-height: 400px;
+            display: block;
             outline: none;
-            /* Impede qualquer clique ou toque direto na mídia */
-            pointer-events: none; 
         }
         .btn-start {
             background-color: #2563eb;
@@ -64,21 +81,23 @@
         }
     </style>
 </head>
-<body oncontextmenu="return false;"> <!-- Bloqueia o clique com botão direito -->
+<body oncontextmenu="return false;"> <!-- Bloqueia botão direito -->
 
     <div class="card">
-        <!-- Altere o título conforme o nível da prova -->
         <h1 id="tituloProva">Exame de Compreensão Auditiva - CILPINHO A1</h1>
 
-        <!-- Botão necessário para contornar a restrição de Autoplay do navegador -->
         <button id="startBtn" class="btn-start" onclick="iniciarProva()">Iniciar Prova</button>
 
-        <div id="mediaContainer" style="display: none; margin-top: 20px;">
-            <!-- Para áudio apenas, substitua a tag <video> por <audio> -->
-            <video id="playerMidia" preload="auto" style="width: 100%; min-height: 250px;">
-                <source src="neymar.mp4"
-                Seu navegador não suporta este formato de mídia.
-            </video>
+        <div id="mediaContainer" style="display: none;">
+            <div class="media-wrapper">
+                <!-- Camada invisível de bloqueio -->
+                <div class="overlay-blocker"></div>
+                
+                <video id="playerMidia" preload="auto">
+                    <source src="neymar.mp4" type="video/mp4">
+                    O seu navegador não suporta este formato de mídia.
+                </video>
+            </div>
             <p class="status" id="statusTxt">A mídia está em execução. Não é possível pausar nem voltar.</p>
         </div>
     </div>
@@ -90,11 +109,9 @@
         const statusTxt = document.getElementById('statusTxt');
 
         function iniciarProva() {
-            // Oculta o botão inicial e exibe a mídia
             startBtn.style.display = 'none';
             mediaContainer.style.display = 'block';
 
-            // Inicia a reprodução
             player.load();
             player.play().catch(error => {
                 alert("Erro ao carregar a mídia. Verifique com o aplicador.");
@@ -102,18 +119,30 @@
             });
         }
 
-        // Bloqueia teclas de atalho de reprodução (Espaço para pausar, Setas para avançar/voltar)
-        document.addEventListener('keydown', function(event) {
-            const teclasBloqueadas = ['Space', 'ArrowLeft', 'ArrowRight', 'KeyK', 'KeyJ', 'KeyL'];
-            if (teclasBloqueadas.includes(event.code)) {
-                event.preventDefault();
+        // TRAVA 1: Se por qualquer motivo o vídeo for pausado antes do fim, força a reprodução imediata
+        player.addEventListener('pause', function() {
+            if (!player.ended) {
+                player.play();
             }
         });
 
-        // Evento disparado quando a mídia termina
+        // TRAVA 2: Bloqueia todas as teclas de atalho de controlo de mídia no teclado
+        window.addEventListener('keydown', function(event) {
+            const teclasBloqueadas = [
+                'Space', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+                'KeyK', 'KeyJ', 'KeyL', 'Tab', 'MediaPlayPause', 'MediaTrackNext', 'MediaTrackPrevious'
+            ];
+            if (teclasBloqueadas.includes(event.code) || event.keyCode === 32) {
+                event.preventDefault();
+                event.stopPropagation();
+                return false;
+            }
+        }, true);
+
+        // Mensagem ao concluir
         player.onended = function() {
             statusTxt.textContent = "A reprodução foi concluída. Aguarde as orientações do aplicador.";
-            statusTxt.style.color = "#4ade80"; // Cor verde de sucesso
+            statusTxt.style.color = "#4ade80";
         };
     </script>
 </body>
