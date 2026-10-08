@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplicação de Prova</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background-color: #0f172a;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none; /* Impede a seleção de textos */
+        }
+        .card {
+            text-align: center;
+            background: #1e293b;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            max-width: 800px;
+            width: 90%;
+        }
+        h1 {
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        video, audio {
+            width: 100%;
+            max-height: 400px;
+            border-radius: 8px;
+            outline: none;
+            /* Impede qualquer clique ou toque direto na mídia */
+            pointer-events: none; 
+        }
+        .btn-start {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-start:hover {
+            background-color: #1d4ed8;
+        }
+        .status {
+            margin-top: 15px;
+            font-size: 15px;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body oncontextmenu="return false;"> <!-- Bloqueia o clique com botão direito -->
+
+    <div class="card">
+        <!-- Altere o título conforme o nível da prova -->
+        <h1 id="tituloProva">Exame de Compreensão Auditiva - Nível A2</h1>
+
+        <!-- Botão necessário para contornar a restrição de Autoplay do navegador -->
+        <button id="startBtn" class="btn-start" onclick="iniciarProva()">Iniciar Prova</button>
+
+        <div id="mediaContainer" style="display: none; margin-top: 20px;">
+            <!-- Para áudio apenas, substitua a tag <video> por <audio> -->
+            <video id="playerMidia" preload="auto">
+                <source src="https://SEU_SERVIDOR.com/midias/video_A2.mp4" type="video/mp4">
+                Seu navegador não suporta este formato de mídia.
+            </video>
+            <p class="status" id="statusTxt">A mídia está em execução. Não é possível pausar nem voltar.</p>
+        </div>
+    </div>
+
+    <script>
+        const player = document.getElementById('playerMidia');
+        const startBtn = document.getElementById('startBtn');
+        const mediaContainer = document.getElementById('mediaContainer');
+        const statusTxt = document.getElementById('statusTxt');
+
+        function iniciarProva() {
+            // Oculta o botão inicial e exibe a mídia
+            startBtn.style.display = 'none';
+            mediaContainer.style.display = 'block';
+
+            // Inicia a reprodução
+            player.play().catch(error => {
+                alert("Erro ao carregar a mídia. Verifique com o aplicador.");
+                startBtn.style.display = 'inline-block';
+            });
+        }
+
+        // Bloqueia teclas de atalho de reprodução (Espaço para pausar, Setas para avançar/voltar)
+        document.addEventListener('keydown', function(event) {
+            const teclasBloqueadas = ['Space', 'ArrowLeft', 'ArrowRight', 'KeyK', 'KeyJ', 'KeyL'];
+            if (teclasBloqueadas.includes(event.code)) {
+                event.preventDefault();
+            }
+        });
+
+        // Evento disparado quando a mídia termina
+        player.onended = function() {
+            statusTxt.textContent = "A reprodução foi concluída. Aguarde as orientações do aplicador.";
+            statusTxt.style.color = "#4ade80"; // Cor verde de sucesso
+        };
+    </script>
+</body>
+</html>
