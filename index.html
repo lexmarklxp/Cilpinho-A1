@@ -75,8 +75,8 @@
 
         <div id="mediaContainer" style="display: none; margin-top: 20px;">
             <!-- Para áudio apenas, substitua a tag <video> por <audio> -->
-            <video id="playerMidia" preload="auto">
-                <source src=ricardo.mp4
+            <video id="playerMidia" preload="auto" style="width: 100%; min-height: 250px;">
+                <source src="ricardo.mp4"
                 Seu navegador não suporta este formato de mídia.
             </video>
             <p class="status" id="statusTxt">A mídia está em execução. Não é possível pausar nem voltar.</p>
@@ -95,6 +95,7 @@
             mediaContainer.style.display = 'block';
 
             // Inicia a reprodução
+            player.load();
             player.play().catch(error => {
                 alert("Erro ao carregar a mídia. Verifique com o aplicador.");
                 startBtn.style.display = 'inline-block';
