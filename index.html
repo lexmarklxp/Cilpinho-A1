@@ -20,7 +20,7 @@
             justify-content: center;
             height: 100vh;
             overflow: hidden;
-            user-select: none; /* Impede selecionar texto */
+            user-select: none;
         }
         .card {
             text-align: center;
@@ -34,6 +34,7 @@
         h1 {
             margin-bottom: 20px;
             font-size: 24px;
+            cursor: pointer;
         }
         .media-wrapper {
             position: relative;
@@ -42,7 +43,6 @@
             border-radius: 8px;
             overflow: hidden;
         }
-        /* Película invisível por cima do vídeo que bloqueia todos os cliques */
         .overlay-blocker {
             position: absolute;
             top: 0;
@@ -76,30 +76,37 @@
         }
         .status {
             margin-top: 15px;
-            font-size: 15px;
+            font-size: 16px;
             color: #94a3b8;
+        }
+        .alerta-bloqueio {
+            color: #f87171 !important;
+            font-weight: bold;
+            font-size: 18px !important;
         }
     </style>
 </head>
-<body oncontextmenu="return false;"> <!-- Bloqueia botão direito -->
+<body oncontextmenu="return false;">
 
     <div class="card">
-        <h1 id="tituloProva">Exame de Compreensão Auditiva - CILPINHO A1</h1>
+        <!-- Clicar 5 vezes no título abre o menu do aplicador -->
+        <h1 id="tituloProva" onclick="resetAplicador()">Exame de Compreensão Auditiva - CILPINHO A1</h1>
 
         <button id="startBtn" class="btn-start" onclick="iniciarProva()">Iniciar Prova</button>
 
         <div id="mediaContainer" style="display: none;">
             <div class="media-wrapper">
-                <!-- Camada invisível de bloqueio -->
                 <div class="overlay-blocker"></div>
                 
                 <video id="playerMidia" preload="auto">
-                    <source src="neymar.mp4" type="video/mp4">
+                    <source src="ricardo.mp4" type="video/mp4">
                     O seu navegador não suporta este formato de mídia.
                 </video>
             </div>
             <p class="status" id="statusTxt">A mídia está em execução. Não é possível pausar nem voltar.</p>
         </div>
+
+        <p class="status" id="mensagemBloqueio" style="display: none;"></p>
     </div>
 
     <script>
@@ -107,8 +114,31 @@
         const startBtn = document.getElementById('startBtn');
         const mediaContainer = document.getElementById('mediaContainer');
         const statusTxt = document.getElementById('statusTxt');
+        const mensagemBloqueio = document.getElementById('mensagemBloqueio');
+
+        // CHAVE ÚNICA DE SESSÃO
+        const CHAVE_PROVA = 'prova_cilpinho_a1_status';
+
+        // Verifica o estado ao carregar a página
+        window.addEventListener('DOMContentLoaded', () => {
+            const estado = localStorage.getItem(CHAVE_PROVA);
+            if (estado === 'iniciada' || estado === 'concluida') {
+                bloquearTelaPorRecarregamento();
+            }
+        });
+
+        function bloquearTelaPorRecarregamento() {
+            startBtn.style.display = 'none';
+            mediaContainer.style.display = 'none';
+            mensagemBloqueio.style.display = 'block';
+            mensagemBloqueio.className = 'status alerta-bloqueio';
+            mensagemBloqueio.textContent = '⚠️ Esta prova já foi iniciada neste Chromebook. Chame o aplicador para liberar o dispositivo.';
+        }
 
         function iniciarProva() {
+            // Marca a prova como iniciada no navegador
+            localStorage.setItem(CHAVE_PROVA, 'iniciada');
+
             startBtn.style.display = 'none';
             mediaContainer.style.display = 'block';
 
@@ -119,15 +149,28 @@
             });
         }
 
-        // TRAVA 1: Se por qualquer motivo o vídeo for pausado antes do fim, força a reprodução imediata
+        // Se o vídeo for pausado, força a reprodução
         player.addEventListener('pause', function() {
             if (!player.ended) {
                 player.play();
             }
         });
 
-        // TRAVA 2: Bloqueia todas as teclas de atalho de controlo de mídia no teclado
+        // BLOQUEIO DE TECLAS: Inclui F5, Ctrl+R, Cmd+R
         window.addEventListener('keydown', function(event) {
+            // Atalhos de recarregar e navegação
+            if (
+                event.key === 'F5' || 
+                (event.ctrlKey && event.key === 'r') || 
+                (event.ctrlKey && event.key === 'R') ||
+                (event.metaKey && event.key === 'r')
+            ) {
+                event.preventDefault();
+                event.stopPropagation();
+                return false;
+            }
+
+            // Atalhos de player de mídia
             const teclasBloqueadas = [
                 'Space', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
                 'KeyK', 'KeyJ', 'KeyL', 'Tab', 'MediaPlayPause', 'MediaTrackNext', 'MediaTrackPrevious'
@@ -139,11 +182,36 @@
             }
         }, true);
 
-        // Mensagem ao concluir
+        // Mensagem de confirmação se o aluno tentar fechar/recarregar a aba
+        window.onbeforeunload = function() {
+            if (localStorage.getItem(CHAVE_PROVA) === 'iniciada') {
+                return "A prova está em andamento. Deseja realmente sair?";
+            }
+        };
+
+        // Quando o vídeo termina
         player.onended = function() {
+            localStorage.setItem(CHAVE_PROVA, 'concluida');
             statusTxt.textContent = "A reprodução foi concluída. Aguarde as orientações do aplicador.";
             statusTxt.style.color = "#4ade80";
         };
+
+        // --- RECURSO EXCLUSIVO DO APLICADOR ---
+        let cliquesTitulo = 0;
+        function resetAplicador() {
+            cliquesTitulo++;
+            if (cliquesTitulo >= 5) {
+                const senha = prompt("ÁREA DO APLICADOR: Digite a senha para liberar esta prova para o próximo aluno:");
+                if (senha === "1234") { // Altere esta senha para a sua preferência
+                    localStorage.removeItem(CHAVE_PROVA);
+                    alert("Prova resetada com sucesso!");
+                    location.reload();
+                } else if (senha !== null) {
+                    alert("Senha incorreta.");
+                }
+                cliquesTitulo = 0;
+            }
+        }
     </script>
 </body>
 </html>
